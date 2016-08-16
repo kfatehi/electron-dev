@@ -1,7 +1,7 @@
 var Promise = require('bluebird');
 var babel = require('babel-core');
 var path = require('path');
-var resolve = require('resolve');
+var resolveModule = require('resolve');
 
 
 var detective = require('babel-plugin-detective');
@@ -10,32 +10,42 @@ var options = {}
 
 
 function findDeps(rootDir, name) {
-  var filePath = resolve.sync(name, { basedir: rootDir })
-  console.log(filePath);
   return new Promise(function(resolve, reject) {
-    babel.transformFile(filePath, {
-      plugins:[[detective, options]]
-    }, function(err, result) {
-      if ( err) throw err;
-      var metadata = detective.metadata(result);
-      var strings = metadata.strings.filter(str => {
-        return str.match(/^\./);
-      });
-      resolve(strings);
-    });
-  });
+    resolveModule(name, { basedir: rootDir }, function(err, filePath) {
+      if (err) return reject(err);
+      console.log(filePath);
+      babel.transformFile(filePath, {
+        plugins:[[detective, options]]
+      }, function(err, result) {
+        if ( err) throw err;
+        var metadata = detective.metadata(result);
+        if (metadata && metadata.strings) {
+          var strings = metadata.strings.filter(str => {
+            return str.match(/^\./);
+          });
+          resolve(
+            Promise.map(strings, function(string) {
+              return findDeps(rootDir, string)
+            })
+          )
+        } else {
+          resolve([]);
+        }
+      })
+    })
+  })
 }
 
 function findAllDeps(main) {
   var rootDir = path.dirname(main);
   return findDeps(rootDir, main).then(function(strings) {
     var initialPaths = [main].concat(
-      strings.map(str=>resolve.sync(str, { basedir: rootDir }))
+      strings.map(str=>resolveModule.sync(str, { basedir: rootDir }))
     )
     return Promise.reduce(strings, function(paths, string) {
       return findDeps(rootDir, string).then(function(strings) {
         return paths.concat(
-          strings.map(str=>resolve.sync(str, { basedir: rootDir }))
+          strings.map(str=>resolveModule.sync(str, { basedir: rootDir }))
         ).uniq()
       });
     }, initialPaths);
@@ -49,4 +59,7 @@ Array.prototype.uniq = function() {
 };
 
 findAllDeps('/Users/keyvan/Workspace/pm-shell/main.js')
-  .then(function(strings) { console.log(strings);  });
+  .then(function(strings) { console.log(strings);  })
+.catch(function(err) {
+  console.log(err);
+});
