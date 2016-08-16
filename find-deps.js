@@ -28,7 +28,9 @@ function parseRequires(filePath) {
       plugins:[[detective, options]],
       sourceRoot: path.dirname(filePath)
     }, function(err, result) {
-      if ( err) throw err;
+      if (err)
+        return reject(err);
+
       var metadata = detective.metadata(result);
       if (metadata && metadata.strings) {
         var strings = metadata.strings.filter(str => {
