@@ -1,0 +1,4 @@
+#!/usr/bin/env node
+var args = require('minimist')(process.argv);
+var dev = require('..');
+dev(args);
