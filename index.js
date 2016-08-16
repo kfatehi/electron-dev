@@ -20,14 +20,15 @@ function main(args) {
     process.exit(0);
   });
 
-  findDeps(workingDir, script).then(function(strings) {
-    // Initialize watcher.
-    var watcher = watch(strings, { persistent: true });
+  findDeps(workingDir, script).then(function(deps) {
+    var watcher = watch(deps, { persistent: true });
     watcher.on('change', function(path) {
+      watcher.close();
+      watcher = null;
       proc.removeAllListeners('exit');
       proc.on('exit', function() {
         proc = null;
-        proc = spawn(electron, [script], spawnOpts);
+        main(args);
       });
       proc.kill('SIGINT');
     });
