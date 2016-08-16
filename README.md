@@ -1,5 +1,7 @@
 # electron-dev
 
+**note this is not for reloading your BrowserWindow -- tools exist for that already, this is for code related to the main process**
+
 it's like [node-dev](https://github.com/fgnass/node-dev) except for electron apps 
 
 like node-dev, electron-dev wraps your program, however where node-dev actually hooks into `require()`,
