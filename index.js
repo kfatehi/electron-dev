@@ -14,7 +14,7 @@ function main(args) {
     cwd: workingDir,
     stdio: 'inherit'
   }
-  var proc = spawn(electron, [script], spawnOpts);
+  var proc = spawn(electron, process.argv.slice(2), spawnOpts);
 
   proc.on('exit', function() {
     process.exit(0);
@@ -37,4 +37,3 @@ function main(args) {
     console.error(err.stack);
   });
 }
-
